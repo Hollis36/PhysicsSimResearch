@@ -28,6 +28,7 @@
 - **[快速入门指南 (GETTING_STARTED.md)](GETTING_STARTED.md)** - 三种学习路径，按场景选择方向
 - **[资源索引 (RESOURCES.md)](RESOURCES.md)** - 160+ 论文、100+ 代码库、数据集汇总
 - **[技术路线图 (ROADMAP.md)](ROADMAP.md)** - 方向关联、应用场景、实施建议
+- **[常见问题 (FAQ.md)](FAQ.md)** - 常见问题解答，入门必读
 - **[贡献指南 (CONTRIBUTING.md)](CONTRIBUTING.md)** - 如何为项目做贡献
 
 ---
