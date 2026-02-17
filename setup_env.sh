@@ -154,7 +154,7 @@ fi
 if [[ $CHOICES == *"3"* ]]; then
     echo ""
     echo "=== Setting up GNN Particle Simulation ==="
-    if ! command -v pip show torch &> /dev/null; then
+    if ! python -c "import torch" 2>/dev/null; then
         install_pytorch
     fi
     pip install torch-geometric pyg-lib torch-scatter torch-sparse torch-cluster -f https://data.pyg.org/whl/torch-$(python -c "import torch; print(torch.__version__.split('+')[0])")+cu$(python -c "import torch; print(torch.version.cuda.replace('.', ''))").html
@@ -165,7 +165,7 @@ fi
 if [[ $CHOICES == *"4"* ]]; then
     echo ""
     echo "=== Setting up World Models ==="
-    if ! command -v pip show torch &> /dev/null; then
+    if ! python -c "import torch" 2>/dev/null; then
         install_pytorch
     fi
     pip install gymnasium[atari,accept-rom-license] dm-control
@@ -176,7 +176,7 @@ fi
 if [[ $CHOICES == *"5"* ]]; then
     echo ""
     echo "=== Setting up PINNs ==="
-    if ! command -v pip show torch &> /dev/null; then
+    if ! python -c "import torch" 2>/dev/null; then
         install_pytorch
     fi
     pip install deepxde
@@ -187,7 +187,7 @@ fi
 if [[ $CHOICES == *"6"* ]]; then
     echo ""
     echo "=== Setting up Multimodal Fusion ==="
-    if ! command -v pip show torch &> /dev/null; then
+    if ! python -c "import torch" 2>/dev/null; then
         install_pytorch
     fi
     pip install opencv-python pillow albumentations
