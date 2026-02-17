@@ -1,0 +1,48 @@
+# Physics Simulation Research - Common Dependencies
+# Core scientific computing libraries
+
+# Deep Learning Frameworks (choose based on your needs)
+# torch>=2.0.0  # PyTorch - uncomment if using
+# jax>=0.4.0    # JAX - uncomment if using
+
+# Core numerical computing
+numpy>=1.24.0
+scipy>=1.10.0
+matplotlib>=3.7.0
+pandas>=2.0.0
+
+# Jupyter environment
+jupyter>=1.0.0
+jupyterlab>=4.0.0
+ipython>=8.0.0
+
+# Data handling
+h5py>=3.8.0  # For HDF5 files (The Well dataset)
+zarr>=2.14.0  # For large-scale array storage
+xarray>=2023.1.0  # For multi-dimensional labeled arrays
+
+# Visualization
+seaborn>=0.12.0
+plotly>=5.14.0
+
+# Experiment tracking (optional, uncomment if needed)
+# wandb>=0.15.0  # Weights & Biases
+# mlflow>=2.3.0  # MLflow
+# tensorboard>=2.13.0  # TensorBoard
+
+# Physics simulation engines (uncomment as needed)
+# brax>=0.9.0  # Google's differentiable physics engine (requires JAX)
+# mujoco>=3.0.0  # MuJoCo physics engine
+# taichi>=1.7.0  # DiffTaichi
+
+# Graph Neural Networks (uncomment if using)
+# torch-geometric>=2.3.0  # PyTorch Geometric (requires PyTorch)
+# jraph>=0.0.6  # JAX graph library (requires JAX)
+
+# Physics-Informed Neural Networks (uncomment if using)
+# deepxde>=1.10.0  # DeepXDE library (supports TensorFlow, PyTorch, JAX)
+
+# Utilities
+tqdm>=4.65.0
+pyyaml>=6.0
+requests>=2.31.0
