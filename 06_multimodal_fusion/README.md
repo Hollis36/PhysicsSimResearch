@@ -1,12 +1,13 @@
 # 多模态融合 (Multimodal Fusion) 深度研究笔记
 
 > 面向已完成 MCWF (Modal Contribution-Weighted Fusion, DroneVehicle mAP50=85.35%) 的研究者
-> 撰写日期: 2026-02-04
+> 撰写日期: 2026-02-04 (更新: **2026-06-17**)
 
 ---
 
 ## 目录
 
+0. [🔄 最新进展更新 (2026-02 → 2026-06)](#-最新进展更新-2026-02--2026-06)
 1. [多模态融合理论体系](#1-多模态融合理论体系)
 2. [MCWF/MCST 理论的推广潜力](#2-mcwfmcst-理论的推广潜力)
 3. [主要融合方法对比表](#3-主要融合方法对比表)
@@ -20,6 +21,50 @@
 11. [从 RGB-IR 扩展到更多传感器的路线图](#11-从-rgb-ir-扩展到更多传感器的路线图)
 12. [与现有 DroneVehicle 项目的对接](#12-与现有-dronevehicle-项目的对接)
 13. [推荐研究方向](#13-推荐研究方向)
+
+---
+
+## 🔄 最新进展更新 (2026-02 → 2026-06)
+
+> 本节于 **2026-06-17** 增补,记录自原调研 (2026-02-04) 以来的前沿进展。每条均附可验证来源。
+>
+> ⚠️ **DroneVehicle 对比重要提醒**: 不同论文采用不一致的协议 (旋转框 vs 水平框、mAP50 vs mAP50:95、不同检测器基线),因此下文各 mAP50 数字**彼此之间、以及与 MCWF 的 85.35% 之间均不可直接比较** —— 仅作各自论文的声明值看待。
+
+### 0.1 新 RGB-IR / 可见光-红外融合检测 + DroneVehicle 现状
+
+| 方法 | 会议/日期 | 来源 | DroneVehicle / 基准 | 状态 |
+|------|----------|------|---------------------|------|
+| **LDSDet** (长程上下文 + 动态跨模态对齐 LARC+DACF+SSG) | Remote Sensing, 2026-06 | [rs18111827](https://doi.org/10.3390/rs18111827) | **85.2% mAP50** (低光/夜间聚焦) | 已发表 |
+| **ESM-YOLO+** (掩码增强注意力融合,小目标,高效) | 预印本 2026-03-06 | [2603.06925](https://arxiv.org/abs/2603.06925) | **74.0% mAP** DroneVehicle;84.71% VEDAI;~93% 更少参数 | 预印本 |
+| **LER-YOLO** (可靠性感知专家路由;MoE + 对齐,针对**错位** RGB-IR) | 预印本 2026-05-20 | [2605.20667](https://arxiv.org/abs/2605.20667) | 89.7±0.2% AP50 (在 "MBU" 基准,**非** DroneVehicle) | 预印本 |
+| **AMSRDet** (自适应多尺度 UAV 红外-可见) | Sensors 26(3):817, 2026-01-26 | [PMC12899399](https://pmc.ncbi.nlm.nih.gov/articles/PMC12899399/) | 81.2% mAP@0.5 / 45.8% mAP@0.5:0.95 | 已发表 (略早于窗口) |
+
+> **对 MCWF/MCST 路线最相关: LER-YOLO (2605.20667)** —— 通过 **mixture-of-experts 按各模态*可靠性*路由**,并显式处理 RGB-IR 错位,正是你想把 MCWF 静态权重升级到的**自适应/不确定性加权**方向。**LDSDet 的 DACF** (动态跨模态对齐模块) 亦值得一读。
+>
+> **关于"2026 DroneVehicle SOTA": 无法确立单一干净的 SOTA。** 窗口内已验证的最高数字是 **LDSDet 85.2% mAP50**。作为背景 (均在窗口前,不算"新"): DAP 报 85.0% 但**用水平框** (Sensors, 2025-12);COMO 报 86.1% (arXiv:2412.18076, 2024-12)。**因协议不同,这些都不是与 MCWF 85.35% 的同协议对比。** 窗口内未发现在同协议下明确、可验证地超越 MCWF 的 RGB-IR 论文。
+
+### 0.2 新 LiDAR-Camera & Radar-Camera 方法 (4D 毫米波雷达+相机是本季热点)
+
+- **[CVPR 2026, 已发表] RPGFusion** —— "4D Radar Prior-Guided Multi-Modal Fusion for 3D Detection";雷达先验图引导图像 BEV query + 稀疏到稠密传播;**View-of-Delft / TJ4DRadSet SOTA**。[CVPR 2026](https://openaccess.thecvf.com/content/CVPR2026/html/Qiu_RPGFusion_4D_Radar_Prior-Guided_Multi-Modal_Fusion_for_3D_Detection_CVPR_2026_paper.html)
+- **[预印本] SIFormer** (arXiv:[2602.20632](https://arxiv.org/abs/2602.20632), 2026-02-24) —— 4D 雷达+相机,注入 2D 实例线索到 BEV;声称 VoD/TJ4DRadSet/nuScenes SOTA。
+- **[预印本] R4Det** (arXiv:[2603.11566](https://arxiv.org/abs/2603.11566), 2026-03-12) —— 全景深度融合 + 无位姿可变形门控时序融合;TJ4DRadSet/VoD SOTA。
+
+### 0.3 新不确定性感知 / 自适应 / 动态融合 (与 MCST 升级直接相关)
+
+- **[预印本] ModalPatch** (arXiv:[2603.02481](https://arxiv.org/abs/2603.02481), 2026-03-03) —— 即插即用,应对**模态缺失**下的鲁棒 3D 检测;**不确定性引导的跨模态融合,动态估计补偿特征的可靠性**并抑制偏置信号 (LiDAR+相机,免重训)。与你的自适应/不确定性扩展高度一致。
+- **[预印本] IIBalance** ("Beyond Forced Modality Balance: Intrinsic Information Budgets", arXiv:[2603.17347](https://arxiv.org/abs/2603.17347), 2026-03-18) —— 将模态贡献对齐到任务相关的容量"预算" + 带样本级不确定性的概率门控。**是 MCST 的一个有原则的替代** (相对静态 0.4/0.6)。
+- **[预印本, 领域外] URMF** (arXiv:[2604.06728](https://arxiv.org/abs/2604.06728), 2026-04-08) —— 单模态偶然不确定性 (可学习高斯) 动态调节模态贡献;任务是**讽刺检测** (文+图),仅方法论相关。
+- 提醒: **Cocoon 是 ICLR 2025** (原笔记已有),未发现"Cocoon 2026";亦未验证到具名的 ICLR 2026 检测融合论文。
+
+### 0.4 新跨模态知识蒸馏
+
+- **[预印本] MonoSTL** ("Selective Transfer Learning of Cross-Modality Distillation for Monocular 3D Detection", arXiv:[2603.07464](https://arxiv.org/abs/2603.07464), 2026-03-08) —— LiDAR 教师→单目相机学生;深度感知选择性特征/关系蒸馏 + **深度不确定性防止负迁移** (KITTI/nuScenes)。**"防负迁移"思路可直接用于 MCWF 双模态→单 IR 蒸馏。**
+- **[预印本] xModel-KD** (arXiv:[2605.30111](https://arxiv.org/abs/2605.30111), 2026-05-28) —— 图像教师→LiDAR 学生;+2% mIoU (任务是点云分割,非检测)。
+
+### 0.5 Shapley / 模态贡献分析
+
+- **窗口内未验证到**将 Shapley 值专门用于 LiDAR/相机/雷达或 RGB-IR *检测*融合的论文。2026 的贡献分析工作要么非 Shapley (IIBalance 用"预算"),要么在窗口前/其他领域: **Contribution-Guided Asymmetric Learning** (arXiv:[2510.26289](https://arxiv.org/abs/2510.26289), 2025-10) 用 Shapley 边际贡献做不平衡/噪声下的鲁棒融合 (分类,非检测)。
+- **结论 (对 MCST/Shapley 角度)**: 最近的 *2026* 先例是 IIBalance (信息预算贡献对齐);Shapley-for-fusion 的最佳参考仍在 2024–2025 且不在检测领域。**将 Shapley/贡献归因用于 RGB-IR 或 LiDAR-相机*检测*融合,截至 2026 年中仍是欠探索的开放细分** —— 与原笔记 §2.2 的 Shapley 推广思路吻合,是有发表潜力的方向。
 
 ---
 
