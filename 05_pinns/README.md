@@ -1,12 +1,13 @@
 # Physics-Informed Neural Networks (PINNs) 深度研究笔记
 
 > 面向喷涂仿真与路径规划研究者的 PINNs 综合参考文档
-> 最后更新: 2026-02
+> 最后更新: **2026-06-17** (原调研 2026-02)
 
 ---
 
 ## 目录
 
+0. [🔄 最新进展更新 (2026-02 → 2026-06)](#-最新进展更新-2026-02--2026-06)
 1. [PINNs 原理详解](#1-pinns-原理详解)
 2. [与传统数值方法 (FEM/FDM/FVM) 对比](#2-与传统数值方法-femfdmfvm-对比)
 3. [主要框架与工具对比](#3-主要框架与工具对比)
@@ -17,6 +18,54 @@
 8. [喷涂物理方程的 PINN 求解方案](#8-喷涂物理方程的-pinn-求解方案)
 9. [代码示例框架](#9-代码示例框架)
 10. [推荐入门路线](#10-推荐入门路线)
+
+---
+
+## 🔄 最新进展更新 (2026-02 → 2026-06)
+
+> 本节于 **2026-06-17** 增补,记录自原调研 (2026-02) 以来的前沿进展。每条均附可验证来源;明确区分 **[已录用/已验证]**、**[预印本/评审中]** 与 **[需谨慎/已撤稿]**。
+
+### 0.1 新方法/新论文 (PINNs, PIKANs)
+
+| 方法 | 会议/状态 | 日期 | arXiv | 一句话 |
+|------|----------|------|-------|--------|
+| **Frozen-PINN** (无梯度下降的快速精确 PINN) | **ICLR 2026** [已录用] | 2026 (v1 2024-05) | [2405.20836](https://arxiv.org/abs/2405.20836) | 时空分离 PINN,用**随机特征代替梯度下降**,因果性由构造保证;9 个 PDE 基准 (极端对流/激波/高维) 精度与效率提升"数个数量级" |
+| **Mesh Field Theory** (mesh 物理的端口哈密顿表述) | **ICML 2026** [已录用] | 2026 | (主 arXiv 未定位) | 证明满足局域性+置换等变+定向协变+能量耗散的 mesh 动力学**归约为端口哈密顿形式**,由 mesh 关联矩阵确定 (结构性理论结果) |
+| **PEST** (Physics-Enhanced Swin Transformer, 3D 湍流) | 预印本 | 2026-02 | [2602.10150](https://arxiv.org/html/2602.10150) | 窗口注意力代理 + **频域自适应损失 + N-S 残差 + 无散度正则**,针对小尺度湍流结构 —— **CFD 相关** |
+| **Lang-PINN** (从语言到 PINN) | 评审中 (ICLR 2026) | 2025-10 | [2510.05158](https://arxiv.org/pdf/2510.05158) | 多智能体 LLM 框架,从自然语言任务描述构建可训练 PINN (PDE 解析→架构→代码→精修) |
+
+> PIKANs: 窗口内**未见**面向多物理 PDE 的重要*通用* PIKAN 新方法;2026 的 KAN-PINN 活动多为领域专用 (金融 RL、UAV 信道),超出范围。KAN 的相关进展体现在算子侧 (KANO,见 §0.3)。
+
+### 0.2 框架版本更新 (老 → 新)
+
+| 框架 | 原笔记 | 当前 (已验证) | 日期 | 来源 |
+|------|--------|---------------|------|------|
+| **DeepXDE** | v1.15.0 | **v1.15.0 (未变,无 2026 新版)** | 2024-12-05 | [GitHub](https://github.com/lululxvi/deepxde/releases) |
+| **NVIDIA PhysicsNeMo** (`nvidia-physicsnemo`) | "2025 更名",无版本 | **v2.1.1** (语义版) / 框架 **v26.05** (日期版) | 2026-06-08 / 2026 | [PyPI](https://pypi.org/project/nvidia-physicsnemo/) · [release notes](https://docs.nvidia.com/physicsnemo/latest/release-notes/index.html) |
+| **NeuralOperator** | v2.0.0 | **v2.0.0 (未变,仍为最新)** | 2024-10-22 | [GitHub](https://github.com/neuraloperator/neuraloperator/releases) |
+
+> - PhysicsNeMo 现有**两套并行版本号** (PyPI 语义 `2.x` vs 日期 `25.xx/26.xx`),均为官方;日期版 v26.05 新增 Sym 内核、重构 CFD 模块、多数据集 mesh 训练、外流/underfill 流范例。
+> - **DeepXDE 与 NeuralOperator 版本号自原笔记以来未变**;但 NeuralOperator v2.0.0 已内含原笔记表格外的架构: **Codano、OTNO、LocalNO、Tensor-GaLore、Mollified GNO、Fourier-Continuation 层** —— 建议补入 FNO 家族清单。
+
+### 0.3 新算子学习架构
+
+| 架构 | 会议/状态 | 日期 | arXiv | 一句话 |
+|------|----------|------|-------|--------|
+| **KANO** (Kolmogorov-Arnold Neural Operator) | **ICLR 2026** [已录用] | 2026-02 (v6) | [2509.16825](https://arxiv.org/abs/2509.16825) | 谱 + 空间双算子,带**符号可解释性**;修复 FNO 在变系数/位置相关 PDE 上的弱点 |
+| **Transolver-3** (工业级几何的 Transformer 求解器) | 预印本 | 2026-02-04 | [2602.04940](https://arxiv.org/abs/2602.04940) | 通过更快 slice/deslice + 几何分区 + 随机子集训练扩展 PDE 求解器,处理 **>1.6 亿网格单元** (飞机/汽车设计) |
+| **GIST** (Gauge-Invariant Spectral Transformer) | 预印本 (IBM) | 2026-04-20 | [2604.18491](https://arxiv.org/abs/2604.18491) | 图神经算子 + 谱化 mesh 连通嵌入;离散化不变、线性扩展;赛车 RANS 数据集 SOTA,交互式气动设计 |
+
+### 0.4 新综述
+
+- **[已验证] "Learning PDE Solvers with Physics and Data: A Unifying View of PINNs and Neural Operators"** (Dai et al., arXiv:[2601.14517](https://arxiv.org/abs/2601.14517), v2 2026-02-18):沿"学什么 / 如何嵌入物理 / 计算如何在实例间分布"三轴统一 PINN 与算子学习 —— 与本笔记的 PINN-vs-算子框架高度契合。
+- **[需谨慎] "PINNs and Neural Operators for Parametric PDEs"** (arXiv:[2511.04576](https://arxiv.org/abs/2511.04576),v3 2026-01-30):**明确是 AI 生成/"人机协作"综述**,提交至 AI-Scientists track —— 引用时须加此免责声明,任何具体论断需另行核实。
+
+### 0.5 与喷涂/CFD/传热相关
+
+- **[需谨慎/已撤稿] PI-JEPA** (arXiv:[2604.01349](https://arxiv.org/abs/2604.01349), 2026-04-01):面向**算子分裂式耦合多物理**的无标签预训练 (压力/输运/反应子模块,Lie-Trotter 分解),概念上贴近喷涂的 N-S + 对流扩散 + 沉积栈。⚠️ **已于 v4 (2026-06-04) 撤稿** —— 仅作思路,勿引用其数字。
+- **最贴近喷涂 CFD 的可迁移方向**: **GIST / Transolver-3** (§0.3,替代复杂/工业几何 CFD)、**PEST** (§0.1,含 N-S 残差 + 无散度约束的湍流代理,适合高 Re 喷涂气流)。
+- **传热逆问题**: **HeatTransFormer** (arXiv:[2512.02618](https://arxiv.org/abs/2512.02618),2025-12):物理引导 Transformer (Laplace 激活、无掩码注意力) 求界面主导扩散逆问题,与"涂层-基材"热逆辨识直接同构 (⚠️ 日期在窗口前)。
+- **空白提示 (诚实标注)**: 未发现专门针对喷涂/热喷涂的 2026 神经算子代理;喷涂路径规划仍以经典方法 (PSO + 沉积模型) 为主,原笔记的等离子喷涂 PINN 工作 (J. Therm. Spray Technol./ITSC) 仍是该细分 SOTA。算子分裂多物理 (PI-JEPA 思路)、PEST、Transolver-3/GIST 是最可迁移方向。
 
 ---
 

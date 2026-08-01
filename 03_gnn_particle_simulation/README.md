@@ -1,12 +1,13 @@
 # GNN-Based Particle Simulation: 基于图神经网络的粒子仿真综合研究笔记
 
 > 面向喷涂路径规划与物理仿真研究者的深度调研报告
-> 调研日期: 2026-02-04
+> 调研日期: 2026-02-04 (更新: **2026-06-17**)
 
 ---
 
 ## 目录
 
+0. [🔄 最新进展更新 (2026-02 → 2026-06)](#-最新进展更新-2026-02--2026-06)
 1. [领域概述：从经典粒子方法到神经网络替代](#1-领域概述从经典粒子方法到神经网络替代)
 2. [GNN 仿真核心原理](#2-gnn-仿真核心原理)
 3. [主要方法详解与对比](#3-主要方法详解与对比)
@@ -14,6 +15,39 @@
 5. [与喷涂粒子动力学建模的对接方案](#5-与喷涂粒子动力学建模的对接方案)
 6. [开源代码资源汇总](#6-开源代码资源汇总)
 7. [推荐入门路线](#7-推荐入门路线)
+
+---
+
+## 🔄 最新进展更新 (2026-02 → 2026-06)
+
+> 本节于 **2026-06-17** 增补,记录自原调研 (2026-02-04) 以来的前沿进展。每条均附可验证 arXiv 来源;明确区分 **[已验证]** 与 **[需谨慎]**,并诚实标注空白。
+
+### 0.1 核心趋势: 走向"统一 Transformer 拉格朗日粒子仿真器"
+
+**[已验证] WorldParticle: Unified World Simulation of Lagrangian Particle Dynamics via Transformer** (arXiv:[2605.15305](https://arxiv.org/abs/2605.15305), 2026-05-14, Wang, Guo, … Chenfanfu Jiang, Komura, Matusik, P.Y. Chen) —— 本窗口**最重要**的进展。单个 Transformer,在共享的拉格朗日粒子表示上做"预测-校正";一个模型覆盖 **布料、弹性固体、牛顿 + 非牛顿流体、颗粒、分子动力学 (共 6 类)**;粒子 tokenizer + 分层 super-token 编码器;可泛化到未见材料/边界/外力,支持**交互控制与逆向设计**。方向上正**取代单物理 GNS 式模型**。(摘要未给出与 GNS 的定量对比。)
+
+### 0.2 新论文 (Feb–Jun 2026, 均已核验 arXiv)
+
+| 论文 | 会议 | 日期 | arXiv | 一句话 (+ 与喷涂相关性) |
+|------|------|------|-------|-------------------------|
+| **Differentiable GNN Simulator for Back-Analysis of Post-Liquefaction Residual Strength** | arXiv (geotech) | 2026-02-12 | [2602.11621](https://arxiv.org/abs/2602.11621) | GNS (MPM 训练) + autodiff 逆优化,从流动破坏 runout 反推残余强度。**可微分 GNS 的逆问题范式**,与喷涂"从涂层反推参数"同构 |
+| **GNN for Multitask Prediction of Rheological & Microstructural Behavior in Suspensions** | arXiv (soft matter) | 2026-02-10 | [2602.07296](https://arxiv.org/abs/2602.07296) | GNN 从颗粒构型同时预测流变 (黏度/剪应力) + 微结构。**与涂料/涂层最相关** —— 油漆即稠密颗粒悬浮液 |
+| **EquiformerV3: Scaling Efficient SE(3)-Equivariant Graph Attention Transformers** | arXiv | 2026-04-10 | [2604.09130](https://arxiv.org/abs/2604.09130) | MD/材料的 SOTA SE(3)-等变力/能 GNN-Transformer;比 V2 小 5×、训练快 1.75–5.9×。原子尺度 (非宏观流体),但**等变架构前沿参考** |
+| **LBM-Driven PINN for Droplet Wettability on Rough Surfaces** | arXiv | 2026-04-03 | [2604.03481](https://arxiv.org/abs/2604.03481) | LBM 驱动 PINN 建模液滴在粗糙表面的铺展/钉扎/毛细滞后;L2≈0.02,R²≈0.999,>10⁴ evals/s。**液滴相关** (是 PINN,非粒子 GNN) |
+
+> **相关锚点 (窗口外但重要)**: **NeuralDEM** 已在 **Nature Communications Physics 8, 440 (2025-11-18)** 正式发表 (arXiv:[2411.09678](https://arxiv.org/abs/2411.09678)):实时 DEM 代理,25 万颗粒漏斗单 GPU **1.4 s** vs 16 核 CPU **3 h**。是 DEM 神经替代最强的同行评审锚点。
+
+### 0.3 已有方法/代码库状态 (截至 2026-06-17)
+
+- **LagrangeBench** (`tumaer/lagrangebench`): **窗口内无新发布**,最新 tag 仍为 **v0.2.0 (2024-07-08)**;仓库有 2026 维护提交但无新版本/数据集。
+- **NeuralMPM** (arXiv:2408.15753): **无已确认的 2026 后续**;最新仍为 v2 (2025-02-24),3D 扩展仍是 future work。
+- **Neural SPH (2402.06275) / JAX-SPH**: 窗口内无新版本或发布。
+- **GNS (geoelements/gns 血统)**: 活动体现在**应用**而非核心发布 —— 如 §0.2 的液化逆分析 (2602.11621) 使用可微分 GNS 框架。
+
+### 0.4 新基准与空白
+
+- **新基准: 无。** 窗口内未发现新的拉格朗日/粒子基准套件;LagrangeBench (NeurIPS 2023) 仍是标准,无 2026 后继。
+- **空白提示 (诚实标注)**: 未发现任何 2026 的 **GNN/粒子代理专门用于喷涂雾化、液滴撞击沉积、热喷涂或涂膜厚度**。最接近的 2026 工作仅为一个液滴润湿 PINN (2604.03481) 与一个悬浮液流变 GNN (2602.07296),均非喷涂代理。**学习式*粒子级*喷涂/涂层仿真在 2026 前沿文献中仍是空白** —— 对本研究是开放机会。
 
 ---
 

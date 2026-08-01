@@ -1,13 +1,14 @@
 # AI 世界模型 (World Models) 深度调研报告
 
 > **面向场景**: 喷涂路径规划 (RL-based) + 多模态检测
-> **调研日期**: 2026-02-04
-> **模型知识截止**: 涵盖 2018-2026 年初关键进展
+> **调研日期**: 2026-02-04 (更新: **2026-06-17**)
+> **模型知识截止**: 涵盖 2018-2026 年中关键进展
 
 ---
 
 ## 目录
 
+0. [🔄 最新进展更新 (2026-02 → 2026-06)](#-最新进展更新-2026-02--2026-06)
 1. [领域概述: 从 Schmidhuber 到当前世界模型热潮](#1-领域概述)
 2. [世界模型 vs 传统仿真器对比](#2-世界模型-vs-传统仿真器对比)
 3. [主要模型/平台对比表](#3-主要模型平台对比表)
@@ -16,6 +17,50 @@
 6. [Model-based RL 与世界模型结合 -- 对接喷涂路径规划](#6-model-based-rl-与世界模型结合----对接喷涂路径规划)
 7. [技术路线建议](#7-技术路线建议)
 8. [推荐入门资源](#8-推荐入门资源)
+
+---
+
+## 🔄 最新进展更新 (2026-02 → 2026-06)
+
+> 本节于 **2026-06-17** 增补,记录自原调研 (2026-02-04) 以来约 4.5 个月的前沿进展。每条均附可验证来源;明确区分 **[已发布/已验证]** 与 **[仅预告/未证实]**。
+
+### 0.1 重大新发布: NVIDIA Cosmos 3 (取代 Predict/Transfer/Reason 分体框架)
+
+**[已验证]** **Cosmos 3** 于 **2026-05-31** 在 **GTC Taipei / COMPUTEX** 发布,官方定位为 "全球首个完全开放的 omnimodel" —— 可原生理解并生成 **文本 / 图像 / 视频 / 环境声音 / 动作 (action)**。
+
+- **架构**: **Mixture-of-Transformers** —— 一个 "推理 Transformer (reasoning transformer)" + 一个 "专家生成 Transformer (expert generation transformer)" 配对,先理解交互再生成视频与**动作轨迹**。训练数据为 "横跨文本/图像/视频/声音/动作轨迹的数十亿样本"。
+- **关键能力**: **原生输出动作轨迹** (关节角、夹爪位置等),使其同时充当 VLM + 世界/视频模型 + **world-action-model** 主干。这是相对原笔记 Cosmos 1/2 的根本性升级 —— 原 Predict / Transfer / Reason 三分体框架已被统一的 omnimodel 取代。
+- **开放性**: 开放权重 (Hugging Face + GitHub),许可证 **OpenMDW 1.1** (Linux Foundation)。
+- **已公开的机器人/工业采用方**: Agile Robots、Doosan Robotics、LG Electronics、Samsung Electronics、Skild AI(机器人);Li Auto(自动驾驶);Centific、Fogsphere、Linker Vision、Milestone、Yuan(视觉 AI)。
+- **Cosmos Coalition**: 同期成立的开放世界模型联盟,成员含 Agile Robots、Black Forest Labs、Generalist、LTX、**Runway**、Skild AI。
+- **对喷涂场景的意义**: 这是目前最可直接落地的平台级世界模型 —— 开放权重 + 原生动作输出 + 明确的合成数据/机器人策略定位,可作为喷涂工作单元的合成数据生成器或 world-action 主干。
+- 来源: [NVIDIA Newsroom](https://nvidianews.nvidia.com/news/nvidia-launches-cosmos-3-the-open-frontier-foundation-model-for-physical-ai) · [NVIDIA Blog](https://blogs.nvidia.com/blog/cosmos-3-physical-ai-open-world-foundation-model/)
+
+### 0.2 其他平台/产品更新
+
+| 项目 | 状态 | 日期 | 要点 | 来源 |
+|------|------|------|------|------|
+| **Google DeepMind "Project Genie"** | [已发布] | 2026-01-29 | Genie 3 (~11B, 720p/24fps 实时交互) 从研究预览**产品化**,面向美国 AI Ultra 订阅者。**注: 不存在已确认的 "Genie 4"** | [blog.google](https://blog.google/innovation-and-ai/models-and-research/google-deepmind/project-genie/) |
+| **World Labs (Fei-Fei Li) — World API** | [已发布] | 2026-01-21 | 以编程方式从文本/图像/视频生成可探索 3D 世界 (Marble 主干) | [worldlabs.ai](https://www.worldlabs.ai/blog) |
+| **World Labs — Spark 2.0** | [已发布] | 2026-04-14 | 流式 3D Gaussian-Splat 渲染 (带 LOD),Web 端实时串流生成的 3D 世界 (渲染基建,非新世界模型) | [worldlabs.ai](https://www.worldlabs.ai/blog) |
+| **World Labs 融资** | [已发布] | 2026-02-18 | 融资 **10 亿美元** (AMD、Autodesk、NVIDIA、Sea 等参投) | [Fast Company](https://www.fastcompany.com/91503667/world-labs-most-innovative-companies-2026) |
+| **Yann LeCun / AMI Labs** | [已发布] | 2026-03-09 | LeCun 离开 Meta 后创立的 **AMI Labs** 完成 **10.3 亿美元**种子轮 (估值 ~35 亿美元),全力押注 JEPA 世界模型。JEPA 路线现已成为独立创业公司 | [TechCrunch](https://techcrunch.com/2026/03/09/yann-lecuns-ami-labs-raises-1-03-billion-to-build-world-models/) |
+
+**澄清/未证实项 (按真实性标注)**:
+- **Dreamer 4**: 截至 2026-06-17 **仍无官方稳定发布或官方代码仓库**;论文仍为 arXiv:2509.24527 (2B 参数, "shortcut forcing")。社区有**非官方** PyTorch 实现 (`github.com/nicklashansen/dreamer4`) 与 `dreamer4` PyPI 包 —— 使用前需注意其非官方性质。
+- **V-JEPA 2**: Feb–Jun 2026 内**未发现** Meta 发布 V-JEPA 后继版本。
+- 未发现已确认的 "Genie 4" / "V-JEPA 3" / "GAIA-4" —— 不应引用这些名称。
+
+### 0.3 新论文: 世界模型内做 RL (与喷涂 MBRL 直接相关)
+
+| 论文 | 会议/状态 | 日期 | arXiv | 一句话 + 关键结果 |
+|------|----------|------|-------|-------------------|
+| **RISE: Self-Improving Robot Policy with Compositional World Model** | **RSS 2026** [已验证] | 2026-02-11 (v2 04-28) | [2602.11075](https://arxiv.org/abs/2602.11075) | **组合式世界模型** = 可控多视角动力学模型 + 独立的 "进度价值 (progress value)" 评估器,纯在想象中自我改进策略。接触密集操作上绝对提升: 砖块分拣 **+35%**、背包打包 **+45%**、关箱 **+35%**。"先预测再在想象中打分" 的结构与喷涂的膜厚奖励 MBRL 高度同构 |
+| **World-Gymnast: Training Robots with RL in a World Model** | arXiv [已验证] | 2026-02-02 | [2602.02454](https://arxiv.org/abs/2602.02454) | 在**动作条件视频世界模型**中 roll-out + VLM 奖励来 RL 微调 VLA 策略;Bridge 机器人上比 SFT 最高快 **18×**、比软件仿真器最高快 **2×**。是 "在学习到的世界模型里做 RL 胜过软件仿真器" 的有力证据 |
+| **World4RL: Diffusion World Models for Policy Refinement** | arXiv [已验证, 2026-03 修订] | 2509.19080 | [2509.19080](https://arxiv.org/abs/2509.19080) | 用扩散世界模型作高保真 "仿真",纯在想象中精修模仿学习初始化的操作策略 |
+| **World Model for Robot Learning: A Comprehensive Survey** | 综述 [已验证] | 2026 (~03) | [项目页](https://ntumars.github.io/wm-robot-survey/) | 系统梳理 "世界模型即策略 vs 世界模型即仿真器",跟踪至 2026-03 |
+
+> **空白提示 (诚实标注)**: 在 Feb–Jun 2026 内**未发现**专门将世界模型 / MBRL 应用于喷涂或膜厚控制的论文;喷涂方向的基线仍停留在 2026 年前 (PaintRL 等)。这对本研究是一个明确的开放机会 —— RISE / World-Gymnast 的 "可控动力学 + 独立奖励评估 + 想象中 RL" 范式是最值得迁移的模板。
 
 ---
 
@@ -49,6 +94,10 @@
 | 2025.12 | **Runway GWM-1** | 通用世界模型, Worlds/Robotics/Avatars 三个变体 |
 | 2025.12 | **Wayve GAIA-3** | 15B 参数, 9 国数据, 聚焦安全评估 |
 | 2026.01 | **Dreamer 4** | 可扩展世界模型 agent, 单 GPU 实时推理 |
+| 2026.01 | **DeepMind Project Genie** | Genie 3 产品化 (AI Ultra 订阅) |
+| 2026.02 | **World-Gymnast / RISE** | 世界模型内做 RL 用于机器人操作 (RSS 2026) |
+| 2026.03 | **AMI Labs (LeCun) 成立** | 10.3 亿美元种子轮, JEPA 路线独立创业 |
+| 2026.05 | **NVIDIA Cosmos 3** | 完全开放 omnimodel, 原生输出动作轨迹 (GTC Taipei) |
 
 ### 1.2 Gartner 2026 趋势: Physical AI
 
