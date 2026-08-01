@@ -1,8 +1,55 @@
 # Physics Foundation Models -- 深度调研报告
 
-> 调研日期: 2026-02-04
+> 调研日期: 2026-02-04 (更新: **2026-06-17**)
 > 面向研究者: 喷涂路径规划 (MFARainbowNet / Rainbow DQN) + RGB-IR 多模态检测方向
 > 目标: 全面梳理物理基础模型 (Physics Foundation Models, PFMs) 领域前沿, 评估与喷涂物理仿真对接的可行性
+
+---
+
+## 🔄 最新进展更新 (2026-02 → 2026-06)
+
+> 本节于 **2026-06-17** 增补,记录自原调研 (2026-02-04) 以来的前沿进展。每条均附可验证来源;标注 ✅ 已发布/已验证、🟡 预印本 (评审中)、⚠️ 仅预告/需谨慎。
+>
+> **总体判断**: Feb–Jun 2026 内**未出现**与 Walrus/PhysiX 同量级、且"首次发布"于此窗口的全新旗舰 PFM;本阶段活动主要是**已有模型的更新、迁移研究、立场论文与新基准**(明确标注,而非臆造新模型)。
+
+### 0.1 新增/新识别的物理基础模型 (原笔记未收录)
+
+| 模型 | 机构 | 日期 | arXiv | 一句话 + 关键结果 |
+|------|------|------|-------|-------------------|
+| **PDE-FM** ("Towards a Foundation Model for PDEs Across Physics Domains") 🟡 | IBM Research | 2025-11-26 | [2511.21861](https://arxiv.org/abs/2511.21861) | 模块化 PFM,采用 **Mamba 状态空间主干** (亚二次复杂度);在 The Well 的 12 数据集预训练,**6 个上取得 SOTA**,平均 VRMSE **−46%** |
+| **MORPH** 🟡 | 学术 (arXiv) | 2025-09 | [2509.21670](https://arxiv.org/abs/2509.21670) | 形状无关、物理感知 PFM;定义"统一物理张量格式 (UPTF-7)";分量卷积 + 场间交叉注意力 + 轴注意力 |
+| **PI-MFM** (Physics-Informed Multimodal FM) 🟡 | 学术 (arXiv) | 2025-12 | [2512.23056](https://arxiv.org/abs/2512.23056) | 以**符号 PDE 表达式为输入**,向量化微分自动装配 PDE 残差损失,预训练/适配时强制物理约束 |
+
+> 注: PDE-FM/MORPH/PI-MFM 均为**晚于原笔记撰写、略早于本窗口**的项目 —— 相对原笔记是新的,故收录。三者论文均**未公布参数量**,不臆测。
+
+### 0.2 已有模型/基准的更新
+
+- **GPhyT** 🟡 —— arXiv:2509.13805 **v4 (2026-05-31)**,已被 **ICML-AI4Physics 2026 workshop** 接收。新增确切参数: **三档 9.2M / 112M / 385M**;1.8TB × 7 数据集;声称较专用架构 **>7×**、零样本上下文泛化。[链接](https://arxiv.org/abs/2509.13805)
+- **Walrus** 🟡 —— **仿真到实验室迁移研究** (arXiv:[2606.01470](https://arxiv.org/abs/2606.01470), 2026-05-31, 23 作者):在 **≤3 个 Rayleigh–Taylor DNS 实现**上微调 Walrus,**零样本迁移到实验室滑障数据**即落入观测混合增长带 (~0.06–0.07),且零样本泛化到未见稳定分层。**对 sim-to-real CFD 代理最有价值** (见 §0.5)。
+- **Poseidon** 🟡 —— 物理信息微调方法 (arXiv:[2603.15431](https://arxiv.org/abs/2603.15431), 2026-03-16, Fraunhofer IISB):为 Poseidon-T (21M) 增加 PDE 残差微调;确认 T/B(158M)/L(629M) 尺寸。
+- **The Well** —— **未发现新数据集发布**,仍为 15TB / 16 数据集 ([repo](https://github.com/PolymathicAI/the_well))。
+- **PhysiX** —— **未发现 2026 更新**,仍为 arXiv:2506.17774,4.5B,8 个 Well 任务。
+
+### 0.3 AI 气象/气候基础模型 (新发布/更新)
+
+- **NVIDIA Earth-2 家族 + FourCastNet 3** ✅ —— **2026-01-26** 于 AMS 年会发布,号称"首个完全开放、加速的天气/气候 AI 全栈"(开放权重 + 推理库,整合 ECMWF/Microsoft/Google 模型)。**FCN3 ≈ 711M 参数**,球面几何 CNN + SHT 谱滤波,概率式;单 GPU **<4 min** 出 60 天预报,较扩散基线最高 **60×**。(FCN3 论文本身为 arXiv:2507.12144,平台发布是本窗口事件。)[HPCwire](https://www.hpcwire.com/aiwire/2026/01/26/nvidia-launches-earth-2-family-of-open-models-for-for-weather-and-climate-ai/) · [HF](https://huggingface.co/nvidia/fourcastnet3)
+- **Google DeepMind WeatherNext 2** ✅ —— (2025-11 发布,2026 广泛使用) 新 **Functional Generative Network (FGN)** 架构,**8× 更快**、至 1 小时分辨率,**99.9% 的变量/层/时效组合 CRPS 优于**前代 (均值 ~6.5%)。[DeepMind](https://deepmind.google/science/weathernext/)
+- **PFM 作火星大气预报器** 🟡 —— arXiv:[2602.15004](https://arxiv.org/abs/2602.15004) (IBM, 2026-02-17):PFM 迁移微调为**火星**天气预报器,WeatherBench 式评测 —— 是 PFM↔天气的桥梁。
+- **Microsoft Aurora** —— **无已确认后继版** (2025-11 重申将开源未来版本)。⚠️ **同名警告**: ICLR 2026 有一个 **不同的** "Aurora"(华东师大,多模态**时间序列**基础模型),勿混淆。
+- **Huawei Pangu-Weather** —— 未验证到 2026 重大版本。
+
+### 0.4 新基准 (2026)
+
+- **RealPDEBench** ✅🟡 —— arXiv:[2601.01829](https://arxiv.org/abs/2601.01829),**ICLR 2026 oral**。**首个**将真实测量与匹配数值仿真配对的基准 (5 数据集/3 任务/8 指标/10 基线,含预训练 PDE FM)。核心发现: sim-vs-real 差距大,但**用仿真数据预训练一致提升精度与收敛** —— 直接支撑"CFD 预训练 → 传感器微调"策略。
+- **FD-Bench** 🟡 —— arXiv:[2505.20349](https://arxiv.org/abs/2505.20349) (2026-05 修订):统一、模块化的数据驱动流体仿真基准,便于 CFD 代理公平对比。
+
+### 0.5 与喷涂/CFD 代理直接相关
+
+1. **Walrus 仿真→实验室湍流迁移 (2606.01470)** 🟡 —— 本用例最强信号: 流体 PFM 在**≤3 个高保真仿真**上微调后零样本迁移到含噪实验数据。这正是"用少量 N-S/对流仿真训喷涂 CFD 代理,再适配到台架/传感器(含 IR)数据"的模板。
+2. **"Fluid Intelligence: A Forward Look on AI Foundation Models in CFD"** 🟡 —— arXiv:[2511.20455](https://arxiv.org/abs/2511.20455) (2025-11, Ashton@NVIDIA, Brandstetter, Mishra):立场论文,**首个纳入 CFD 输入的 scaling law**,给出建工业级 CFD FM 的成本/时间估计。构建喷涂代理的策略必读。
+3. **RealPDEBench (§0.4)** —— 其"仿真预训练有助真实"的结论,为 CFD 预训练→IR/传感器微调的喷涂代理提供实证依据。
+
+> **空白提示 (诚实标注)**: 未发现任何 2026 论文将 **RGB-IR 检测**与喷涂/涂层 CFD 代理直接结合,亦无喷涂专用 PFM —— 是明确的开放机会。热喷涂 ML 仍以回归/代理 (ANN、树模型、RSM) 为主,非基础模型 (参见 2026 综述 [Springer s44251-025-00113-5](https://link.springer.com/article/10.1007/s44251-025-00113-5))。
 
 ---
 
