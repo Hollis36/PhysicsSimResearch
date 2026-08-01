@@ -1,6 +1,6 @@
 # 可微分物理仿真 (Differentiable Physics Simulation) 深度调研
 
-> 调研日期: 2026-02-04
+> 调研日期: 2026-02-04 (更新: **2026-06-17**)
 > 面向研究方向: 喷涂路径规划 (MFARainbowNet / Rainbow DQN) + RGB-IR 多模态检测
 > 调研人: AI Research Assistant
 
@@ -8,6 +8,7 @@
 
 ## 目录
 
+0. [🔄 最新进展更新 (2026-02 → 2026-06)](#-最新进展更新-2026-02--2026-06)
 1. [领域概述](#1-领域概述)
 2. [核心框架详解](#2-核心框架详解)
 3. [核心框架对比表](#3-核心框架对比表)
@@ -17,6 +18,54 @@
 7. [推荐入门路线](#7-推荐入门路线)
 8. [代码示例与快速上手](#8-代码示例与快速上手)
 9. [参考资源汇总](#9-参考资源汇总)
+
+---
+
+## 🔄 最新进展更新 (2026-02 → 2026-06)
+
+> 本节于 **2026-06-17** 增补,记录自原调研 (2026-02-04) 以来的前沿进展。每条均附可验证来源;明确区分 **[已发布/已验证]** 与 **[仅预告/未证实]**。下文 §1.3 时间线、§2.1 Newton 状态、§2.2–2.4 版本号已据本节同步修正;完整数字以本节为准。
+
+### 0.1 NVIDIA Newton 已 GA —— "beta、API 不稳定" 的描述已过时
+
+**[已验证]** Newton **不再是 beta**。它已在 **GTC 2026 (Jensen Huang keynote, 2026-03-16;媒体报道 03-17)** 正式 GA,定位 "production-ready",并已快速迭代:
+
+- **当前版本: v1.3.0 (2026-06-11)**。版本节奏: v1.0.0 (04-13, GTC 后首次开源代码) → v1.1.0 (04-15) → v1.2.0 (05-12) → v1.2.1 (06-05) → v1.3.0 (06-11)。注意细节: GTC "发布" 在 3 月中,带版本号的开源仓库 tag 从 4 月中开始。
+- **许可证**: 代码 **Apache-2.0**;文档 CC-BY-4.0。治理: **Linux Foundation** 项目,由 NVIDIA + Google DeepMind + Disney Research 共同发起。
+- **底层**: NVIDIA Warp + OpenUSD;主后端为 **MuJoCo Warp (MJWarp, MuJoCo 3.5)**。
+- **求解器 (据官方文档,可更新原 §2.1)**: **MuJoCo (Warp)、Kamino (Disney, 关节/手/腿)、VBD (Vertex Block Descent, 可变形体)、ImplicitMPM/iMPM (颗粒/粒子)、XPBD、Featherstone、SemiImplicit、Style3D**。明确支持**可微分仿真**。
+- **性能 (RTX PRO 6000 Blackwell, vs MJX)**: **运动 (locomotion) 252x、操作 (manipulation) 475x**。⚠️ 原笔记的 "152–313x" 已过时;"475x" 是操作任务数字,运动任务为 252x。
+- **集成**: Isaac Lab 3.0 与 Isaac Sim 6.0 (早期访问)。已公开工业采用方: Skild AI、Samsung (经 Lightwheel)、Toyota Research Institute。
+- **v1.3.0 中与 RL 相关亮点**: 原地 `SolverBase.reset()` + `StateFlags` 掩码式 world reset (提升 RL 环境重置效率);SDF + hydroelastic 碰撞;公开 `newton.intersect_ray()` 射线投射 API (传感器);实验性光追 `ViewerRTX`。
+- **对喷涂的意义**: 仍无喷涂/涂层专用求解器,但 **iMPM/VBD + 可微分性** 是目前最贴近 "沉积式" 仿真的主流基底。
+- 来源: [NVIDIA 开发者博客](https://developer.nvidia.com/blog/newton-adds-contact-rich-manipulation-and-locomotion-capabilities-for-industrial-robotics) · [Newton releases](https://github.com/newton-physics/newton/releases) · [GTC 2026 news](https://blogs.nvidia.com/blog/gtc-2026-news/)
+
+### 0.2 版本号更新 (老 → 新,可更新 §9.4 等)
+
+| 工具 | 原笔记 | 最新 (已验证) | 日期 | 来源 |
+|------|--------|---------------|------|------|
+| **NVIDIA Warp** | 1.11.0 | **1.14.0** | 2026-06-01 | [PyPI warp-lang](https://pypi.org/project/warp-lang/) |
+| **NVIDIA Newton** | beta / 152–313x | **v1.3.0** (已 GA, 252x/475x) | 2026-06-11 | [GitHub](https://github.com/newton-physics/newton/releases) |
+| **Brax** | 0.14.0 | **0.14.2** (仅补丁) | 2026-03-15 | [PyPI brax](https://pypi.org/project/brax/) |
+| **Taichi** | 1.7.4 / "1.8.0" | **仍为 1.7.4** | — | [PyPI taichi](https://pypi.org/project/taichi/) |
+
+> ⚠️ **更正**: 原笔记多处提到 Taichi **1.8.0 (ROCm/AMD)**,但截至 2026-06-17 **PyPI 上 Taichi 仍是 1.7.4,1.8.0 并未发布** —— 应视为未发布。
+> Warp 1.12→1.14 重点: 硬件纹理采样、**JAX API 转正 (stable)**、计算图捕获序列化 (含反向传播, `.wrp` 可移植)、bf16 (`wp.bfloat16`)、cuBQL BVH 后端、`warp.fem` 多环境支持、修复分量写入的梯度传播。
+
+### 0.3 新框架: Genesis World 1.0
+
+**[已发布]** **Genesis World 1.0** 于 **2026-05** 发布 (Genesis AI):统一多物理引擎 + **Nyx** 真实感渲染器 + **Quadrants** 跨平台编译器,Pythonic API。求解器含 Rigid、FEM、MPM、PBD/SPH、uipc、SAP 耦合器。**"为可微分仿真而设计,具备 autodiff 与反向传播基础设施"**,并提供**可微分触觉传感器**;MPM/Tool 求解器当前已可微,刚体可微分性逐步推出。*相关性: MPM + 可微分触觉是最接近沉积/涂层建模的主流基底之一。* 来源: [文档](https://genesis-world.readthedocs.io/) · [GitHub](https://github.com/Genesis-Embodied-AI/genesis-world)
+
+### 0.4 新论文 (Feb–Jun 2026, 均已核验 arXiv)
+
+| 论文 | 会议 | 日期 | arXiv | 一句话 |
+|------|------|------|-------|--------|
+| **Certified Gradient-Based Contact-Rich Manipulation via Smoothing-Error Reachable Tubes** | RSS 2026 | 2026-02-10 | [2602.09368](https://arxiv.org/abs/2602.09368) | 平滑混合接触动力学的同时用集值可达管界定模型误差,给出**带认证保证**的接触梯度 |
+| **Where-to-Learn: Analytical Policy Gradient Directed Exploration** | IEEE RA-L | 2026-03-28 | [2603.27317](https://arxiv.org/abs/2603.27317) | 用可微分动力学的解析策略梯度引导**物理感知探索**,优于熵/新颖性探索 —— **与 RL 路径规划最相关** |
+| **Few-Shot Neural Differentiable Simulator: Real-to-Sim Rigid-Contact Modeling** | ICRA 2026 | 2026-03-06 | [2603.06218](https://arxiv.org/abs/2603.06218) | Mesh-GNN + 解析物理,经少量真实数据标定的全可微仿真器,支持梯度策略优化 (real-to-sim) |
+
+> **更新 (非新论文)**: 原笔记中的 **DiffMJX** ("Hard Contacts with Soft Gradients", arXiv:2506.14186) 现已**确认被 ICLR 2026 录用** —— 仅录用状态为新信息。
+
+> **空白提示 (诚实标注)**: Feb–Jun 2026 内**未发现**任何将**可微分仿真**与喷涂/涂层/沉积路径规划直接结合的论文或框架;该细分仍依赖简化沉积模型的解析梯度 (如 GPGPU 热喷涂涂层厚度仿真 + 非线性共轭梯度路径后优化)。对喷涂 RL/Rainbow-DQN 而言,Newton 的 iMPM/VBD 与 Genesis 的可微分 MPM 是最近的可复用基底,这是一个开放机会。
 
 ---
 
@@ -60,7 +109,8 @@
 2025  NVIDIA Newton (GTC 2025, Linux Foundation) / MuJoCo Playground (RSS 2025 Best Demo)
        Rewarped (ICLR 2025) / DiffMJX / Newton -> Linux Foundation
   |
-2026  Newton 持续开发中 (API 不稳定, beta 阶段)
+2026  Newton 1.0 GA (GTC 2026, Apache-2.0) -> v1.3.0 (2026-06); 252x/475x vs MJX
+       Genesis World 1.0 (2026-05) / Warp 1.14 (JAX stable)
 ```
 
 ---
@@ -76,7 +126,7 @@
 | **发起方** | NVIDIA + Google DeepMind + Disney Research |
 | **开源协议** | Apache-2.0 (Linux Foundation 项目) |
 | **底层框架** | 基于 NVIDIA Warp 构建 |
-| **当前状态** | **Beta 开发阶段**, API 不稳定, 可能频繁变更 |
+| **当前状态** | **已 GA (v1.3.0, 2026-06)**, GTC 2026 发布; 详见 §0.1 更新 |
 
 **架构特点:**
 
@@ -123,7 +173,7 @@ uv run -m newton.examples basic_viewer --viewer usd --output-path output.usd
 |------|------|
 | **GitHub** | https://github.com/NVIDIA/warp |
 | **文档** | https://nvidia.github.io/warp/ |
-| **最新版本** | 1.11.0 |
+| **最新版本** | **1.14.0** (2026-06-01; 原笔记 1.11.0) |
 | **论文** | "Warp: Differentiable Spatial Computing for Python" (SIGGRAPH 2024) |
 | **安装** | `pip install warp-lang` |
 
@@ -182,7 +232,7 @@ class MySimStep(torch.autograd.Function):
 | **GitHub (DiffTaichi)** | https://github.com/taichi-dev/difftaichi |
 | **官网** | https://www.taichi-lang.org/ |
 | **论文** | "DiffTaichi: Differentiable Programming for Physical Simulation" (ICLR 2020) |
-| **最新版本** | Taichi 1.7.4 (2025-07-31), 1.8.0 (ROCm/AMD) |
+| **最新版本** | Taichi 1.7.4 (2025-07-31) —— 注: 1.8.0 截至 2026-06 未发布 |
 | **安装** | `pip install taichi` |
 
 **核心特性:**
@@ -245,7 +295,7 @@ with ti.ad.Tape(loss):
 |------|------|
 | **GitHub** | https://github.com/google/brax |
 | **论文** | "Brax -- A Differentiable Physics Engine for Large Scale Rigid Body Simulation" (NeurIPS 2021) |
-| **最新版本** | 0.14.0 (2025-12-16) |
+| **最新版本** | 0.14.2 (2026-03-15; 原笔记 0.14.0) |
 | **安装** | `pip install brax` |
 | **依赖** | JAX (GPU 需 CUDA + CuDNN) |
 
